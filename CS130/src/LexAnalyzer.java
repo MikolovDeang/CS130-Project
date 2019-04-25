@@ -1,7 +1,10 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
+
+import Tables.*;
 
 public class LexAnalyzer {
 	static ArrayList<Token> tokens = new ArrayList<Token>();
@@ -10,7 +13,7 @@ public class LexAnalyzer {
 	    try { 
 	        String s = "";
 	        @SuppressWarnings("resource")
-			BufferedReader in = new BufferedReader(new FileReader(new File("D:\\Java Projects\\CS130\\Sample.txt")));
+			BufferedReader in = new BufferedReader(new FileReader(new File("Input.txt")));
 	        while((s = in.readLine()) != null) {
 	            input += s;
 	        }
@@ -21,15 +24,88 @@ public class LexAnalyzer {
 	        	if(t != null && t.getLexeme() != null && t.getLexeme().trim().length() != 0)
 	        		tokens.add(t);
 	        }
+        	try {System.setOut(new PrintStream(new File("Lex-output.txt")));} catch (Exception e) { e.printStackTrace();}
 	        System.out.println("TOKEN       LEXEME");
 	        System.out.println("------------------");
 	        for(int i = 0; i < tokens.size(); i++) {
 	            System.out.println(tokens.get(i).getIDLexeme());
 	        }
+	        
+	        ArrayList<Table> tables = new ArrayList<Table>();
+	        while(tokens.size() > 0)
+	        {
+	        	tables.add(tableComponent());
+	        }
+	        System.out.println("------------------");
+	        try {System.setOut(new PrintStream(new File("Parser-output.csv")));} catch (Exception e) { e.printStackTrace();}
+	        for(int i = 0; i < tables.size(); i++)
+	        {
+	        	tables.get(i).printTable();
+	        }
 	    }
 	    catch(Exception e) {
 	        e.printStackTrace();
 	    }
+	}
+	public static void remove(int i)
+	{
+		for(int h = 0; h < i; h++)
+		{
+			tokens.remove(0);
+		}
+	}
+	public static Table tableComponent()
+	{
+		Table temp = new Table();
+    	if(tokens.get(0).getLexeme().equals("<table") && tokens.get(1).getId().equals("GTHAN"))
+    	{
+    		remove(2);
+    		while(!(tokens.get(0).getId().equals("ENDTAGHEAD") && tokens.get(1).getLexeme().equals("table") && tokens.get(2).getId().equals("GTHAN"))) 
+    		{
+    			temp.addRow(rowComponent());
+    		}
+    		remove(3);
+    	}
+    	return temp;
+	}
+	public static Row rowComponent()
+	{
+		Row temp = new Row();
+		if(tokens.get(0).getLexeme().equals("<tr") && tokens.get(1).getId().equals("GTHAN"))
+		{
+			remove(2);
+			while(!(tokens.get(0).getId().equals("ENDTAGHEAD") && tokens.get(1).getLexeme().equals("tr") && tokens.get(2).getId().equals("GTHAN"))) 
+			{
+				temp.addColumn(columnComponent());
+			}
+			remove(3);
+		}
+		return temp;
+	}
+	public static Column columnComponent()
+	{
+		Column temp = new Column();
+		if(tokens.get(0).getLexeme().equals("<th") && tokens.get(1).getId().equals("GTHAN"))
+    	{
+    		remove(2);
+    		while(!(tokens.get(0).getId().equals("ENDTAGHEAD") && tokens.get(1).getLexeme().equals("th") && tokens.get(2).getId().equals("GTHAN"))) 
+    		{
+    			temp.addToken(tokens.get(0));
+    			remove(1);
+    		}
+    		remove(3);
+    	}
+    	else if(tokens.get(0).getLexeme().equals("<td") && tokens.get(1).getId().equals("GTHAN"))
+    	{
+    		remove(2);
+    		while(!(tokens.get(0).getId().equals("ENDTAGHEAD") && tokens.get(1).getLexeme().equals("td") && tokens.get(2).getId().equals("GTHAN"))) 
+    		{
+    			temp.addToken(tokens.get(0));
+    			remove(1);
+    		}
+    		remove(3);
+    	}
+    	return temp;
 	}
 	public static Token getNewToken()
 	{
